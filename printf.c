@@ -1,78 +1,84 @@
 #include "main.h"
+#include <stdarg.h>
+
 /**
- * _printf - printf function.
- * @format: variable
- *
- * Return: nbytes printed.
+ * check_format - checks if there is a valid format specifier
+ * @format: possible valid format specifier
+ * Return: pointer to valid function or NULL
  */
-int _printf(const char *format, ...)
+int (*check_format(const char *format))(va_list)
 {
-	va_list list;
-	unsigned int i = 0, characters_number = 0;
+	int i = 0;
+	print_t p[] = {
+		{"c", print_c},
+		{"s", print_s},
+		{"i", print_i},
+		{"d", print_d},
+		{"b", print_b},
+		{"u", print_u},
+		{"o", print_o},
+		{"x", print_x},
+		{"X", print_X},
+		{"p", print_p},
+		{"S", print_S},
+		{"r", print_r},
+		{"R", print_R},
+		{NULL, NULL}
+	};
 
-	if (!format)
-		return (-1);
-
-	va_start(list, format);
-	for (i = 0; format[i] != '\0'; i++)
+	for (; p[i].t != NULL; i++)
 	{
-		if (format[i] == '%')
-		{
-			if (format[i + 1] == '\0')
-				return (-1);
-
-			else if (format[i + 1] == '%')
-			{
-				_putchar('%');
-				characters_number++;
-				i++;
-			}
-			else if (cmp_func(format[i + 1]) != NULL)
-			{
-				characters_number += (cmp_func(format[i + 1]))(list);
-				i++;
-			}
-			else
-			{
-				_putchar(format[i]);
-				characters_number++;
-			}
-		}
-		else
-		{
-			_putchar(format[i]);
-			characters_number++;
-		}
+		if (*(p[i].t) == *format)
+			break;
 	}
-	va_end(list);
-	return (characters_number);
+	return (p[i].f);
 }
 
 /**
- * cmp_func - Entry point
- * @a: character.
- *
- * Return: 0.
+ * _printf - function for format printing
+ * @format: list of arguments to printing
+ * Return: Number of characters to printing
  */
-int (*cmp_func(const char a))(va_list)
+int _printf(const char *format, ...)
 {
-	print_f printf[] = {
-		{'c', printc},
-		{'s', print_string},
-		{'d', print_n},
-		{'i', print_n},
-		{'\0', NULL}
-	};
+	va_list ap;
+	int (*f)(va_list);
+	unsigned int i = 0, counter = 0;
 
-	int k;
+	if (format == NULL)
+		return (-1);
 
-	for (k = 0; printf[k].p != '\0'; k++)
+	va_start(ap, format);
+	while (format && format[i])
 	{
-		if (printf[k].p == a)
+		if (format[i] != '%')
 		{
-			return (printf[k].func);
+			_putchar(format[i]);
+			counter++;
+			i++;
+			continue;
 		}
+		else
+		{
+			if (format[i + 1] == '%')
+			{
+				_putchar('%');
+				counter++;
+				i += 2;
+				continue;
+			}
+			else
+			{
+				f = check_format(&format[i + 1]);
+				if (f == NULL)
+					return (-1);
+				i += 2;
+				counter += f(ap);
+				continue;
+			}
+		}
+		i++;
 	}
-
-	return (0);
+	va_end(ap);
+	return (counter);
 }
